@@ -332,3 +332,71 @@ Start by opening the project in VS Code and selecting "Reopen in Container". Eve
 **Project**: Saraswati  
 **Repository**: [satishc2437/saraswati](https://github.com/satishc2437/saraswati)  
 **Setup Date**: October 30, 2025
+
+## Mount Failure Root Cause & Fix
+
+### Root Cause
+The Dev Container previously specified a `mounts` entry attempting to bind mount the host user's `.gitconfig` using an environment interpolation:
+
+```
+"mounts": [
+   "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.host.gitconfig,type=bind,consistency=cached,readonly"
+]
+```
+
+On Windows hosts (especially with drive letters), the Dev Containers CLI can fail to resolve `${localEnv:HOME}` into a path acceptable to the Docker daemon when invoked via VS Code Insiders, producing a generic `docker run` failure (exit code 1) before container startup. Common contributing factors:
+
+1. The host path may not exist (no `.gitconfig` file), causing Docker to treat the source as an invalid bind.
+2. Path normalization issues (`C:\Users\Name` vs. `//c/Users/Name`) under mixed shell/CLI contexts.
+3. Early bind mount attempts before the extension substitutes variables correctly in Insiders builds.
+
+### Fix Implemented
+We removed the entire `mounts` array from `devcontainer.json` to eliminate the failing bind and instead added a robust script `setup-git-identity.sh` that:
+
+- Detects existing global `git config` inside the container.
+- Falls back to a placeholder identity (`Saraswati Developer <dev@example.invalid>`) if none set.
+- Provides clear instructions for overriding with real credentials.
+
+This approach avoids relying on host filesystem mounts for developer identity, making the container portable and reliable across OS variants.
+
+### Verification Steps
+After rebuilding the container:
+
+```bash
+# 1. Rebuild container (VS Code Command Palette)
+#    "Dev Containers: Rebuild Container"
+
+# 2. Confirm container starts without mount-related errors.
+docker ps --format '{{.Names}}' | findstr /I saraswati
+
+# 3. Exec into container (optional) and inspect git config:
+git config --global user.name
+git config --global user.email
+
+# 4. Override identity if placeholders present:
+git config --global user.name "Your Real Name"
+git config --global user.email "you@domain.com"
+
+# 5. Create a test commit to ensure identity applies:
+echo "test" > verify.txt
+git add verify.txt
+git commit -m "chore: verify git identity"
+git log -1 --pretty=fuller
+```
+
+Expected: No container startup errors; commit shows your configured name and email.
+
+### Optional (If You Still Want Host Identity)
+If you need to reuse host global settings, you can manually copy them once:
+
+```bash
+# On host (PowerShell)
+Get-Content "$HOME\.gitconfig" | Set-Content .devcontainer/host.gitconfig
+
+# Add include inside container after start:
+git config --global include.path /workspaces/saraswati/.devcontainer/host.gitconfig
+```
+
+This manual approach keeps automatic startup stable.
+
+---

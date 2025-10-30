@@ -249,6 +249,59 @@ docs(readme): update installation instructions
 spec(payments): define payment processing requirements
 ```
 
+### Git Identity in Dev Container
+
+Because development occurs inside a Dev Container, your host machine's global git configuration (name/email) does not automatically apply. We use a forwarding approach plus a setup script:
+
+1. The container mounts the host `.gitconfig` at `/home/vscode/.host.gitconfig` (if it exists).
+2. On creation, `.devcontainer/setup-git-identity.sh` copies `user.name` and `user.email` into the container if they are unset.
+3. A commit message template is installed at `.git-commit-template.txt` and configured via `git config commit.template` for consistent messages.
+
+#### Setting Identity Manually
+
+Global (single identity for all repos in container):
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+```
+
+Per-repository (multiple personas):
+```bash
+git config user.name "Project Persona"
+git config user.email "persona@example.com"
+```
+
+Enforce explicit config (prevents accidental fallback):
+```bash
+git config --global user.useConfigOnly true
+```
+
+#### Verifying
+```bash
+git config --list --show-origin | grep -E 'user.name|user.email'
+```
+
+#### Commit Template Guidance
+The template encourages concise imperative titles (<=50 chars), wrapped body lines (<=72 chars), and optional footers (`BREAKING CHANGE:` / issue references / `Co-authored-by:` entries).
+
+#### Optional Commit Signing
+To enable commit signing later:
+```bash
+git config --global commit.gpgsign true
+git config --global gpg.format ssh
+git config --global user.signingkey <your-ssh-key-id>
+```
+Ensure the SSH key is added to your GitHub account with signing enabled.
+
+#### Troubleshooting
+If VS Code Source Control reports missing identity despite configuration:
+- Re-run: `bash .devcontainer/setup-git-identity.sh`
+- Confirm permissions on `/home/vscode/.gitconfig`
+- Check for `user.useConfigOnly` blocking fallback values
+
+If host identity should never be copied (privacy concerns), remove the mount from `devcontainer.json`.
+
+
 ## Troubleshooting
 
 ### Common Issues

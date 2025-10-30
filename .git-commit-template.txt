@@ -1,0 +1,9 @@
+# Commit Title (imperative, 50 chars max)
+#
+# Body (wrap at 72 chars). Explain WHAT and WHY, avoid HOW.
+#
+# Reference: link issues like: Closes #123 or Related #456
+#
+# Footer examples:
+# BREAKING CHANGE: describe impact
+# Co-authored-by: Name <email@example.com>

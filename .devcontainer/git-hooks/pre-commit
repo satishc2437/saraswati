@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Enforce that git user.name and user.email are configured before committing.
+set -euo pipefail
+
+name=$(git config user.name || true)
+email=$(git config user.email || true)
+
+global_name=$(git config --global user.name || true)
+global_email=$(git config --global user.email || true)
+
+if [[ -z "$name" && -z "$global_name" ]]; then
+  echo "[pre-commit] ERROR: git user.name is not set (local or global)." >&2
+  echo "Run: git config --global user.name 'Your Name'" >&2
+  exit 1
+fi
+
+if [[ -z "$email" && -z "$global_email" ]]; then
+  echo "[pre-commit] ERROR: git user.email is not set (local or global)." >&2
+  echo "Run: git config --global user.email 'your.email@example.com'" >&2
+  exit 1
+fi
+
+# Optional: verify commit template exists
+if ! git config commit.template &>/dev/null; then
+  echo "[pre-commit] WARN: commit.template not configured. Consider: git config commit.template .git-commit-template.txt" >&2
+fi
+
+exit 0

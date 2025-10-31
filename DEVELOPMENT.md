@@ -139,10 +139,10 @@ def test_feature():
     """Test description following the spec."""
     # Arrange
     setup = create_test_data()
-    
+
     # Act
     result = function_under_test(setup)
-    
+
     # Assert
     assert result == expected_value
 ```

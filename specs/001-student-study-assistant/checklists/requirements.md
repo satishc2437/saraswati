@@ -1,7 +1,7 @@
 # Specification Quality Checklist: Student Study Assistant Web Application
 
-**Purpose**: Validate specification completeness and quality before proceeding to planning  
-**Created**: October 30, 2025  
+**Purpose**: Validate specification completeness and quality before proceeding to planning
+**Created**: October 30, 2025
 **Feature**: [001-student-study-assistant/spec.md](../spec.md)
 
 ## Content Quality
@@ -35,7 +35,7 @@
 
 **Validation Date**: October 30, 2025
 
-**Clarifications Resolved**: 
+**Clarifications Resolved**:
 - Q1: Layout preferences persist across sessions and sync across devices
 - Q2: Social login (Google, Facebook, Microsoft) with test authentication for development
 - Q3: Auto-save continuously with debouncing to minimize network traffic

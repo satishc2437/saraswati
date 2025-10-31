@@ -235,7 +235,7 @@ In your code:
 def important_function():
     """
     Implements the feature defined in SPEC-001-feature-name.
-    
+
     See: specs/SPEC-001-feature-name.md#section-name
     """
     pass
@@ -245,7 +245,7 @@ def important_function():
 // TypeScript example
 /**
  * Implements the feature defined in SPEC-001-feature-name
- * 
+ *
  * @see specs/SPEC-001-feature-name.md#section-name
  */
 function importantFunction() {
@@ -354,7 +354,7 @@ reviewers:
 
 ## Overview
 
-This specification defines the user authentication system for Saraswati, 
+This specification defines the user authentication system for Saraswati,
 enabling secure user login and session management.
 
 ## Problem Statement

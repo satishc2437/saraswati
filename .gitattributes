@@ -1,0 +1,17 @@
+# Normalize line endings and enforce LF where required
+* text=auto eol=lf
+
+# Shell scripts and executable hooks must use LF
+*.sh text eol=lf
+.devcontainer/git-hooks/* text eol=lf
+scripts/hooks/* text eol=lf
+
+# Markdown should be normalized
+*.md text eol=lf
+
+# Binary files (prevent modification)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary

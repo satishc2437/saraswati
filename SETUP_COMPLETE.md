@@ -329,8 +329,8 @@ Start by opening the project in VS Code and selecting "Reopen in Container". Eve
 
 **Questions?** Check the documentation files or review the guides in this repository.
 
-**Project**: Saraswati  
-**Repository**: [satishc2437/saraswati](https://github.com/satishc2437/saraswati)  
+**Project**: Saraswati
+**Repository**: [satishc2437/saraswati](https://github.com/satishc2437/saraswati)
 **Setup Date**: October 30, 2025
 
 ## Mount Failure Root Cause & Fix

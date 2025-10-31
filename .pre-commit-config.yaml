@@ -1,0 +1,18 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+        args: [--fix=lf]
+  - repo: local
+    hooks:
+      - id: check-git-config
+        name: Check Git user.name and user.email
+        entry: bash scripts/hooks/check-git-config.sh
+        language: system
+        pass_filenames: false

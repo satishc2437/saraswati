@@ -1,8 +1,8 @@
 # Feature Specification: Student Study Assistant Web Application
 
-**Feature Branch**: `001-student-study-assistant`  
-**Created**: October 30, 2025  
-**Status**: Draft  
+**Feature Branch**: `001-student-study-assistant`
+**Created**: October 30, 2025
+**Status**: Draft
 **Input**: User description: "Web Application that can be used by a Student. Similar to NotebookLM with additional functionalities focused on student usefulness. Supports multiple study material formats (PDFs, PPT, DOCX, web articles), note-taking, LLM integration, and flexible UI configuration for focused reading and conversation modes. Browser-based with responsive design for laptop and tablet."
 
 ## Clarifications

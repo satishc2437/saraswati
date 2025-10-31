@@ -5,7 +5,22 @@
 **Status**: Draft  
 **Input**: User description: "Web Application that can be used by a Student. Similar to NotebookLM with additional functionalities focused on student usefulness. Supports multiple study material formats (PDFs, PPT, DOCX, web articles), note-taking, LLM integration, and flexible UI configuration for focused reading and conversation modes. Browser-based with responsive design for laptop and tablet."
 
-## User Scenarios & Testing *(mandatory)*
+## Clarifications
+
+### Session 2025-10-30
+
+- Q: How should the system handle study materials with respect to uploading vs. referencing cloud/local sources in the initial version? → A: V1 supports referencing files from the local drive only (no server-side binary storage, no OneDrive/Google Drive integration, no remote upload). Future versions may add direct upload and cloud drive integrations.
+- Out of Scope (V1): Cloud storage integrations (OneDrive, Google Drive), server-side binary storage of documents. Only metadata + extracted text from local files and web article content are stored.
+- Q: What observability approach balances future telemetry (metrics/tracing) with minimal V1 complexity? → A: Adopt a lightweight observability core: structured JSON logging (Error, Warning, Info, Trace) via a single facade with pluggable sinks (stdout/file). Provide correlation IDs and context fields; define no-op adapter interfaces for metrics/tracing so future enablement requires only registering new adapters without changing existing call sites. Telemetry (metrics/tracing) deferred to post‑V1.
+
+**Post-V1 Backlog (Not in V1):**
+
+1. Accessibility baseline (keyboard navigation, screen reader semantics, color contrast)
+2. LLM rate limiting & usage quotas (per user daily cap + burst protection)
+3. Re-index strategy for changed local files (automated change detection vs. manual re-link flow)
+4. Notes export / backup (JSON or portable archive format)
+
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Manage Study Material Collection (Priority: P1)
 
@@ -13,14 +28,14 @@ As an MBA student, I need to organize and access all my study materials (PDFs, P
 
 **Why this priority**: This is the foundation of the application. Without the ability to organize and access materials, no other features have value. It represents the core value proposition of centralizing study resources.
 
-**Independent Test**: Can be fully tested by uploading various file types (PDF, PPT, DOCX) and web article links, organizing them into collections or folders, and verifying they can be retrieved and displayed correctly. Success is measured by ability to access any uploaded material within 5 seconds.
+**Independent Test**: Can be fully tested by referencing (registering) various local file types (PDF, PPT, DOCX) and web article links, organizing references into collections or folders, and verifying they can be re-located (metadata viewable, extracted text available) within the app. Success is measured by ability to access any referenced material's extracted metadata within 5 seconds.
 
 **Acceptance Scenarios**:
 
-1. **Given** I am on the dashboard, **When** I upload a PDF file, **Then** the file appears in my material collection with correct title and metadata
+1. **Given** I am on the dashboard, **When** I select a PDF file from my local drive to register, **Then** a reference entry (not the raw file) appears in my material collection with extracted title and metadata
 2. **Given** I have multiple materials uploaded, **When** I organize them by course or subject, **Then** I can navigate to any collection and see only relevant materials
 3. **Given** I have a web article URL, **When** I add it to my collection, **Then** the article content is accessible within the application
-4. **Given** I have uploaded materials, **When** I search for a specific document by name or tag, **Then** the system returns matching results within 2 seconds
+4. **Given** I have referenced materials, **When** I search for a specific document by name or tag, **Then** the system returns matching results within 2 seconds
 5. **Given** I am using a tablet, **When** I access my material collection, **Then** the interface adapts to touch interactions and smaller screen sizes
 
 ---
@@ -106,14 +121,15 @@ As an MBA student, I need to create connections between different materials and 
 - How does the system handle different PowerPoint animations and embedded media? System should extract content and structure while preserving essential visual hierarchy, noting that complex animations may not be preserved.
 - What happens when a student reaches storage limits? System should display clear storage usage indicators and warnings before limits are reached, with options to delete or archive materials.
 - How does the AI assistant handle questions about topics not covered in uploaded materials? System should clearly indicate when responding from general knowledge vs. uploaded materials, and distinguish between the two sources.
+- What happens if a previously referenced local file is moved, renamed, or deleted? System should mark the reference as broken, retain extracted text (flag as stale), and allow the student to re-link to a new path or remove the reference.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
-- **FR-001**: System MUST allow students to upload and store PDF documents with file size up to 50MB per file
-- **FR-002**: System MUST allow students to upload and store PowerPoint (PPT/PPTX) files with file size up to 50MB per file
-- **FR-003**: System MUST allow students to upload and store Word (DOC/DOCX) documents with file size up to 50MB per file
+- **FR-001**: System MUST allow students to register (reference) PDF documents from their local drive (no binary stored server-side in V1) and extract basic metadata (filename, inferred title, size)
+- **FR-002**: System MUST allow students to register (reference) PowerPoint (PPT/PPTX) files from their local drive and extract slide titles for indexing (no binary stored in V1)
+- **FR-003**: System MUST allow students to register (reference) Word (DOC/DOCX) documents from their local drive and extract heading structure for indexing (no binary stored in V1)
 - **FR-004**: System MUST allow students to add web articles by providing URLs and extract readable content
 - **FR-005**: System MUST display uploaded materials in a browsable collection organized by student-defined categories or folders
 - **FR-006**: System MUST provide a document viewer capable of rendering PDF, PowerPoint, and Word documents within the browser
@@ -139,14 +155,24 @@ As an MBA student, I need to create connections between different materials and 
 - **FR-025**: System MUST support multiple concurrent browser tabs without data conflicts
 - **FR-026**: System MUST auto-save student work (notes, annotations) continuously with debouncing to minimize network traffic (save after 2-3 seconds of inactivity)
 - **FR-026a**: System MUST handle browser refresh without losing any work saved within the last 5 seconds
-- **FR-027**: System MUST provide visual indicators for file upload progress and status
-- **FR-028**: System MUST validate uploaded files for type and size before processing
+- **FR-027**: System MUST provide visual indicators for local file reference processing (metadata/text extraction) status
+- **FR-028**: System MUST validate referenced files for supported type and size limits before attempting extraction
 - **FR-029**: System MUST display meaningful error messages when operations fail
 - **FR-030**: System MUST allow students to delete materials and notes they have created
+- **FR-031**: System MUST provide a centralized logging facade supporting levels: Error, Warning, Info, Trace.
+- **FR-032**: System MUST emit logs as structured JSON with fields: timestamp (UTC ISO 8601), level, message, category/module, correlationId (per user action or request), and optional context key-value map.
+- **FR-033**: System MUST allow enabling/disabling Trace level at runtime (configuration flag) without restart.
+- **FR-034**: System MUST support pluggable sinks (at minimum stdout and file) with asynchronous buffered writing to avoid blocking user interactions.
+- **FR-035**: System MUST expose stable no-op adapter interfaces for future metrics and tracing so adding providers does not require modifying existing log invocation code.
+- **FR-036**: System MUST enforce a maximum size per log entry; messages exceeding 4KB are truncated (preserve first 3.5KB + ellipsis marker).
+- **FR-037**: System MUST propagate correlationId across AI conversation flows and document reference processing tasks.
+- **FR-038**: System MUST provide a configuration option to redact sensitive local file path segments (e.g., user home directories) from logs while retaining functional context.
+- **FR-039**: System MUST batch Info/Trace logs for periodic flush (every ≤2 seconds or when buffer reaches 100 entries) to minimize I/O overhead.
+- **FR-040**: System MUST gracefully degrade if a log sink fails (emit a single Warning and fallback to stdout without interrupting user operations).
 
 ### Key Entities
 
-- **Study Material**: Represents any educational content uploaded or added by the student. Attributes include unique identifier, title, content type (PDF/PPT/DOCX/Web Article/Note), file metadata (size, upload date), content body, student owner, custom tags, and organization category/folder. Materials can be searched, viewed, annotated, and referenced in AI conversations.
+- **Study Material**: Represents any educational content referenced or added by the student. In V1, for local files only a reference plus extracted text/metadata is stored (not the original binary). Attributes include unique identifier, title, material type (PDF/PPT/DOCX/Web Article/Note), reference type (LocalReference | WebArticle | Note), file metadata snapshot (size, last indexed timestamp), extracted structural data (e.g., headings, slide titles), student owner, custom tags, organization category/folder, and extracted text index used for search & AI context.
 
 - **Note**: A special type of study material created directly by the student. Attributes include unique identifier, title, rich text content, creation/modification timestamps, student owner, optional parent material reference (if note is linked to a specific document), and custom tags. Notes are first-class study materials that can be searched and used in AI context.
 
@@ -174,20 +200,35 @@ The following assumptions were made during specification development:
 10. **Performance**: Target user base is individual students or small groups (not institutional scale) with up to 10,000 total users in V1
 11. **Session Duration**: Typical study sessions last 1-3 hours with multiple materials accessed per session
 12. **Authentication**: Social login providers (Google, Facebook, Microsoft) are accessible in target markets and acceptable to students
+13. **Observability Deferred**: Metrics/tracing are postponed until after V1; logging facade and adapter interfaces assumed sufficient for future extension.
 
-## Success Criteria *(mandatory)*
+## Non-Functional Quality Attributes (Logging & Observability)
+
+- **Logging Overhead**: Average logging overhead per user action SHOULD remain <5% of action processing time.
+- **Trace Impact**: Enabling Trace logging SHOULD not increase average document reference processing time by >10%.
+- **Flush Behavior**: Error & Warning logs flushed immediately; Info/Trace flushed within 2 seconds or 100 entries.
+- **Correlation Coverage**: ≥95% of Error and Warning logs include a correlationId.
+- **Redaction**: When redaction enabled, sensitive path segments MUST be replaced with `<redacted>` while leaving file name intact.
+- **Failover**: Sink failure recovery (fallback) MUST occur within 1 second of detection.
+- **Extensibility**: Adding a metrics or tracing provider MUST require zero changes to application business logic (only configuration / registration).
+- **Time Standardization**: All log timestamps MUST be UTC ISO 8601.
+
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
-- **SC-001**: Students can upload a study material file and have it appear in their collection within 10 seconds (for files under 10MB)
+- **SC-001**: Students can register (reference) a local study material file and have its metadata appear in their collection within 10 seconds (for files under 10MB)
 - **SC-002**: Students can open and begin reading any uploaded document within 3 seconds of selection
 - **SC-003**: Students can create and save a note in under 30 seconds
 - **SC-004**: AI assistant responds to student questions within 5 seconds for queries about uploaded materials
-- **SC-005**: 90% of students successfully upload their first document and create their first note within 5 minutes of first use
+- **SC-005**: 90% of students successfully reference their first local document and create their first note within 5 minutes of first use
 - **SC-006**: Interface remains responsive (no lag or stuttering) when resizing panels or navigating between materials
-- **SC-007**: Application functions correctly on both laptop browsers (Chrome, Firefox, Safari, Edge) and tablet browsers (iPad Safari, Android Chrome) 
+- **SC-007**: Application functions correctly on both laptop browsers (Chrome, Firefox, Safari, Edge) and tablet browsers (iPad Safari, Android Chrome)
 - **SC-008**: Search functionality returns relevant results for 95% of queries about content contained in uploaded materials
 - **SC-009**: Students can work continuously for 2+ hour study sessions without encountering system errors or performance degradation
 - **SC-010**: 85% of students report that the application improves their study efficiency compared to using separate document viewers and note-taking apps
 - **SC-011**: Application supports at least 500 documents per student account without performance impact on navigation and search
-- **SC-012**: Document upload success rate is above 98% for supported file formats under size limits
+- **SC-012**: Document reference processing success rate (metadata + text extraction) is above 98% for supported file formats under size limits
+- **SC-013**: ≥95% of Error logs include correlationId and structured context fields
+- **SC-014**: Enabling Trace logging increases average document reference processing time by <10%
+- **SC-015**: Log sink failure recovery (fallback to stdout) occurs within 1 second of detection
